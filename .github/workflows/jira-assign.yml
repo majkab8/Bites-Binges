@@ -1,0 +1,27 @@
+name: Jira auto-assign
+
+on:
+  create
+
+jobs:
+  notify-jira:
+    if: github.event.ref_type == 'branch'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wyślij dane o branchu do Jiry
+        env:
+          JIRA_WEBHOOK_URL: ${{ secrets.JIRA_WEBHOOK_URL }}
+          JIRA_WEBHOOK_SECRET: ${{ secrets.JIRA_WEBHOOK_SECRET }}
+          REF: ${{ github.event.ref }}
+          REF_TYPE: ${{ github.event.ref_type }}
+          SENDER: ${{ github.event.sender.login }}
+        run: |
+          payload=$(jq -n \
+            --arg ref "$REF" \
+            --arg ref_type "$REF_TYPE" \
+            --arg login "$SENDER" \
+            '{ref: $ref, ref_type: $ref_type, sender: {login: $login}}')
+          curl --fail-with-body -sS -X POST "$JIRA_WEBHOOK_URL" \
+            -H "Content-Type: application/json" \
+            -H "X-Automation-Webhook-Token: $JIRA_WEBHOOK_SECRET" \
+            -d "$payload"
