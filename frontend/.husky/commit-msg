@@ -1,0 +1,15 @@
+subject=$(head -n 1 "$1")
+
+case "$subject" in
+  Merge\ * | Revert\ * | fixup!\ * | squash!\ * | amend!\ *) exit 0 ;;
+esac
+
+if printf '%s' "$subject" | grep -Eq '^KAN-[0-9]+ [^ ]'; then
+  exit 0
+fi
+
+ticket=$(git branch --show-current | grep -Eo 'KAN-[0-9]+' | head -n 1)
+
+echo "Commit message must start with a Jira key, e.g. \"${ticket:-KAN-123} Add login form\"." >&2
+echo "Got: \"$subject\"" >&2
+exit 1
