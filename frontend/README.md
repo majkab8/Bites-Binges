@@ -28,15 +28,33 @@ The app runs at [http://localhost:3000](http://localhost:3000).
 
 ## Scripts
 
-| Command             | Description                               |
-| ------------------- | ----------------------------------------- |
-| `pnpm dev`          | Start the development server              |
-| `pnpm build`        | Create a production build                 |
-| `pnpm start`        | Serve the production build                |
-| `pnpm lint`         | Run ESLint                                |
-| `pnpm typecheck`    | Type-check the project with TypeScript    |
-| `pnpm format`       | Format all files with Prettier            |
-| `pnpm format:check` | Check formatting without writing (for CI) |
+| Command              | Description                                     |
+| -------------------- | ----------------------------------------------- |
+| `pnpm dev`           | Start the development server                    |
+| `pnpm build`         | Create a production build                       |
+| `pnpm start`         | Serve the production build                      |
+| `pnpm lint`          | Run ESLint                                      |
+| `pnpm typecheck`     | Type-check the project with TypeScript          |
+| `pnpm format`        | Format all files with Prettier                  |
+| `pnpm format:check`  | Check formatting without writing (for CI)       |
+| `pnpm test`          | Run unit and component tests once               |
+| `pnpm test:watch`    | Run tests in watch mode                         |
+| `pnpm test:coverage` | Run tests with a coverage report in `coverage/` |
+
+## Testing
+
+Unit and component tests use [Vitest](https://vitest.dev) and
+[React Testing Library](https://testing-library.com/docs/react-testing-library/intro).
+Put test files next to the code they test, named `*.test.ts` or `*.test.tsx`
+inside `src/`.
+
+- Unit tests: import a function and assert on its result.
+- Component tests: `render()` the component, interact with it via
+  `@testing-library/user-event`, and query it the way a user would
+  (`screen.getByRole`, `getByText`, …).
+
+Vitest can't render async Server Components. Move their logic into plain
+functions and unit-test those; full pages will be covered by end-to-end tests.
 
 ## Project structure
 

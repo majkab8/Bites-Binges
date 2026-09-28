@@ -49,6 +49,8 @@ jobs:
 
       - run: pnpm format:check
 
+      - run: pnpm test
+
       - run: pnpm build
         env:
           NEXT_TELEMETRY_DISABLED: 1
