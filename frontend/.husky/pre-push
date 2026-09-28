@@ -1,0 +1,3 @@
+cd frontend
+pnpm typecheck
+pnpm run --if-present test
