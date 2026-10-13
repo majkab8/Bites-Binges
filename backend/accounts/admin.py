@@ -10,3 +10,6 @@ class CustomUserAdmin(UserAdmin):
     fieldsets = UserAdmin.fieldsets + (
         ("Profile", {"fields": ("display_name", "color")}),
     )
+    add_fieldsets = UserAdmin.add_fieldsets + (
+        ("Profile", {"fields": ("email", "display_name", "color")}),
+    )

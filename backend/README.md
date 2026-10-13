@@ -21,11 +21,11 @@ python manage.py runserver
 - API docs: http://localhost:8000/api/docs/
 
 ## Environment variables
-| Variable | Default | Description |
-|---|---|---|
+| Variable | Default                 | Description |
+|---|-------------------------|---|
 | `DJANGO_SECRET_KEY` | `dev-only-insecure-key` | Secret key, **must be set outside local dev** |
-| `DJANGO_DEBUG` | `1` | `1` = debug on, `0` = off |
-| `DJANGO_ALLOWED_HOSTS` | `localhost,127.0.0.1` | Comma-separated list of hosts |
+| `DJANGO_DEBUG` | `0`                     | `1` = debug on, `0` = off |
+| `DJANGO_ALLOWED_HOSTS` | `localhost,127.0.0.1`   | Comma-separated list of hosts |
 
 ## Tests
 ```powershell
@@ -35,5 +35,6 @@ pytest
 ## After pulling changes
 ```powershell
 pip install -r requirements.txt
+copy .env.example .env
 python manage.py migrate
 ```
