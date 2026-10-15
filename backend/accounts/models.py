@@ -1,6 +1,7 @@
-from django.db import models
-from django.contrib.auth.models import AbstractUser, UserManager as DjangoUserManager
+from django.contrib.auth.models import AbstractUser
+from django.contrib.auth.models import UserManager as DjangoUserManager
 from django.core.validators import RegexValidator
+from django.db import models
 from django.db.models.functions.text import Lower
 
 hex_color_validator = RegexValidator(
@@ -8,6 +9,7 @@ hex_color_validator = RegexValidator(
     message="Color must be a hex value",
     code="invalid_color",
 )
+
 
 class UserManager(DjangoUserManager):
     def get_by_natural_key(self, username):
@@ -45,4 +47,3 @@ class User(AbstractUser):
         if self.email:
             self.email = self.email.strip().lower()
         super().save(*args, **kwargs)
-
