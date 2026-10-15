@@ -1,13 +1,22 @@
 from django.db import models
-from django.contrib.auth.models import AbstractUser
+from django.contrib.auth.models import AbstractUser, UserManager as DjangoUserManager
 from django.core.validators import RegexValidator
 from django.db.models.functions.text import Lower
 
 hex_color_validator = RegexValidator(
-    regex=r"^#[0-9A-Fa-f]{6}$",
+    regex=r"\A#[0-9A-Fa-f]{6}\Z",
     message="Color must be a hex value",
     code="invalid_color",
 )
+
+class UserManager(DjangoUserManager):
+    def get_by_natural_key(self, username):
+        return self.get(**{f"{self.model.USERNAME_FIELD}__iexact": username.strip()})
+
+    def _create_user(self, username, email, password, **extra_fields):
+        if not email:
+            raise ValueError("Users must have an email address.")
+        return super()._create_user(username, email, password, **extra_fields)
 
 
 class User(AbstractUser):
@@ -22,6 +31,7 @@ class User(AbstractUser):
 
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = ["username"]
+    objects = UserManager()
 
     class Meta:
         constraints = [
