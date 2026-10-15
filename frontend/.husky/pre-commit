@@ -1,2 +1,10 @@
 cd frontend
 pnpm exec lint-staged
+cd ..
+
+backend_files=$(git diff --cached --name-only --diff-filter=ACMR -- 'backend/*.py' | sed 's|^backend/||')
+if [ -n "$backend_files" ]; then
+  cd backend
+  uv run ruff check --force-exclude $backend_files
+  uv run ruff format --check --force-exclude $backend_files
+fi

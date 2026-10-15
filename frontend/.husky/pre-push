@@ -1,3 +1,5 @@
 cd frontend
 pnpm typecheck
 pnpm run --if-present test
+cd ../backend
+uv run pytest -q
