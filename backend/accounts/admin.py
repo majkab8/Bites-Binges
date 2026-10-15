@@ -1,0 +1,15 @@
+from django.contrib import admin
+from django.contrib.auth.admin import UserAdmin
+
+from .models import User
+
+
+@admin.register(User)
+class CustomUserAdmin(UserAdmin):
+    list_display = ("email", "username", "display_name", "is_staff")
+    fieldsets = UserAdmin.fieldsets + (
+        ("Profile", {"fields": ("display_name", "color")}),
+    )
+    add_fieldsets = UserAdmin.add_fieldsets + (
+        ("Profile", {"fields": ("email", "display_name", "color")}),
+    )
