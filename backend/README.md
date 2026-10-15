@@ -2,19 +2,21 @@
 
 Django + Django REST Framework API for Board & Screen Hub.
 
+## Requirements
+- [uv](https://docs.astral.sh/uv/getting-started/installation/) - it installs the pinned Python version (3.13) automatically
+
 ## Setup
 ```powershell
 cd backend
-python -m venv .venv
-.venv\Scripts\Activate.ps1
-pip install -r requirements.txt
-python manage.py migrate
-python manage.py createsuperuser
+uv sync
+copy .env.example .env
+uv run python manage.py migrate
+uv run python manage.py createsuperuser
 ```
 
 ## Run
 ```powershell
-python manage.py runserver
+uv run python manage.py runserver
 ```
 
 - Admin panel: http://localhost:8000/admin (log in with email)
@@ -29,12 +31,23 @@ python manage.py runserver
 
 ## Tests
 ```powershell
-pytest
+uv run pytest
 ```
 
 ## After pulling changes
 ```powershell
-pip install -r requirements.txt
-copy .env.example .env
-python manage.py migrate
+uv sync
+uv run python manage.py migrate
 ```
+
+## Adding dependencies
+App libraries:
+```powershell
+uv add <package>
+```
+Dev-only libraries (tests, linters):
+```powershell
+uv add --dev <package>
+```
+
+Commit both `pyproject.toml` and `uv.lock`. Do not edit `uv.lock` manually.
