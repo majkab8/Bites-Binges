@@ -108,6 +108,14 @@ def test_create_user_doesnt_allow_same_email_with_different_lettercase():
 
 
 @pytest.mark.django_db
+def test_create_user_doesnt_allow_same_username_with_different_lettercase():
+    User.objects.create_user(username="Maja", email="maja@example.com", password="secret123")
+
+    with pytest.raises(IntegrityError):
+        User.objects.create_user(username="maja", email="other@example.com", password="secret123")
+
+
+@pytest.mark.django_db
 def test_login_works_with_email_uppercased():
     User.objects.create_user(
         username="majeczkab8", email="majeczkab8@example.com", password="secret123"
@@ -142,3 +150,13 @@ def test_admin_add_user_without_email_shows_form_error(logged_in_admin):
     assert response.status_code == 200
     assert "email" in response.context["adminform"].form.errors
     assert User.objects.count() == 1
+
+
+def test_admin_add_user_with_taken_username_in_other_lettercase_shows_form_error(logged_in_admin):
+    logged_in_admin.post(ADD_USER_URL, add_user_form("maja", "maja@example.com"))
+
+    response = logged_in_admin.post(ADD_USER_URL, add_user_form("MAJA", "other@example.com"))
+
+    assert response.status_code == 200
+    assert "username" in response.context["adminform"].form.errors
+    assert User.objects.count() == 2

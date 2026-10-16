@@ -38,6 +38,7 @@ class User(AbstractUser):
     class Meta:
         constraints = [
             models.UniqueConstraint(Lower("email"), name="unique_email_case_insensitive"),
+            models.UniqueConstraint(Lower("username"), name="unique_username_case_insensitive"),
         ]
 
     def __str__(self):
