@@ -50,4 +50,9 @@ Dev-only libraries (tests, linters):
 uv add --dev <package>
 ```
 
+## Lint & format
+```powershell
+uv run ruff check --fix .
+uv run ruff format .
+```
 Commit both `pyproject.toml` and `uv.lock`. Do not edit `uv.lock` manually.
