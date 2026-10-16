@@ -1,22 +1,48 @@
 @import "tailwindcss";
 
+:root,
+[data-app="board"] {
+  --background: #12030a;
+  --foreground: #ffe4e6;
+  --foreground-soft: #edc0c6;
+  --muted-foreground: #d9a3aa;
+  --subtle-foreground: #c08e96;
+
+  --primary: #d8262e;
+  --primary-strong: #8e0c18;
+  --primary-deep: #4a060e;
+  --primary-foreground: #ffffff;
+  --accent: #ff6b78;
+}
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  color-scheme: dark;
+  --surface: rgb(255 255 255 / 0.05);
+  --surface-strong: rgb(255 255 255 / 0.08);
+  --border: rgb(255 255 255 / 0.12);
+  --border-subtle: rgb(255 255 255 / 0.08);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-foreground-soft: var(--foreground-soft);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-subtle-foreground: var(--subtle-foreground);
+
+  --color-primary: var(--primary);
+  --color-primary-strong: var(--primary-strong);
+  --color-primary-deep: var(--primary-deep);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-accent: var(--accent);
+
+  --color-surface: var(--surface);
+  --color-surface-strong: var(--surface-strong);
+  --color-border: var(--border);
+  --color-border-subtle: var(--border-subtle);
+
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
 }
 
 body {
