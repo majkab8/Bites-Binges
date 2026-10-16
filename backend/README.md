@@ -4,9 +4,11 @@ Django + Django REST Framework API for Board & Screen Hub.
 
 ## Requirements
 - [uv](https://docs.astral.sh/uv/getting-started/installation/) - it installs the pinned Python version (3.13) automatically
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) — runs the PostgreSQL database
 
 ## Setup
 ```powershell
+docker compose up -d
 cd backend
 uv sync
 copy .env.example .env
@@ -56,3 +58,13 @@ uv run ruff check --fix .
 uv run ruff format .
 ```
 Commit both `pyproject.toml` and `uv.lock`. Do not edit `uv.lock` manually.
+
+## Database
+PostgreSQL runs in Docker. Run these commands from the **repo root** (where `docker-compose.yml` is):
+
+| Command | What it does |
+|---|---|
+| `docker compose up -d` | Start the database |
+| `docker compose ps` | Check status (should be `healthy`) |
+| `docker compose down` | Stop the database, data is kept |
+| `docker compose down -v` | Stop the database and **delete all data** |
