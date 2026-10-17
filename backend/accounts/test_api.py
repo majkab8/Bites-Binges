@@ -71,13 +71,14 @@ def test_register_without_display_name(api_client):
     assert response.data["display_name"] == ""
 
 
-def test_register_rejects_existing_email_in_any_lettercase(api_client, user):
+@pytest.mark.parametrize("email", ["maja@example.com", "MAJA@example.com"])
+def test_register_rejects_existing_email_in_any_lettercase(api_client, user, email):
     response = api_client.post(
-        REGISTER_URL, {"email": "MAJA@example.com", "username": "maja2", "password": PASSWORD}
+        REGISTER_URL, {"email": email, "username": "maja2", "password": PASSWORD}
     )
 
     assert response.status_code == 400
-    assert "email" in response.data
+    assert response.data["email"] == ["A user with this email already exists."]
     assert User.objects.count() == 1
 
 
@@ -88,7 +89,7 @@ def test_register_rejects_existing_username_in_any_lettercase(api_client, user, 
     )
 
     assert response.status_code == 400
-    assert "username" in response.data
+    assert response.data["username"] == ["A user with this username already exists."]
     assert User.objects.count() == 1
 
 
@@ -240,6 +241,27 @@ def test_auth_flow_with_csrf_token_rotated_after_login():
     assert register.status_code == 201
     assert logout.status_code == 204
     assert login.status_code == 200
+
+
+def register_from(origin):
+    client = APIClient(enforce_csrf_checks=True)
+    client.get(CSRF_URL)
+    return client.post(
+        REGISTER_URL,
+        {"email": "maja@example.com", "username": "maja", "password": PASSWORD},
+        HTTP_ORIGIN=origin,
+        HTTP_X_CSRFTOKEN=client.cookies["csrftoken"].value,
+    )
+
+
+@pytest.mark.django_db
+def test_register_accepts_trusted_frontend_origin(settings):
+    assert register_from(settings.CSRF_TRUSTED_ORIGINS[0]).status_code == 201
+
+
+@pytest.mark.django_db
+def test_register_rejects_untrusted_origin():
+    assert register_from("https://evil.example.com").status_code == 403
 
 
 def test_login_is_throttled(api_client, user):

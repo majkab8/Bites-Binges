@@ -1,5 +1,6 @@
 from django.contrib.auth import authenticate
 from django.contrib.auth.password_validation import validate_password
+from django.contrib.auth.validators import UnicodeUsernameValidator
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import IntegrityError, transaction
 from rest_framework import serializers
@@ -20,7 +21,11 @@ class RegisterSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ("email", "username", "password", "display_name")
-        extra_kwargs = {"display_name": {"required": False}}
+        extra_kwargs = {
+            "display_name": {"required": False},
+            "email": {"validators": []},
+            "username": {"validators": [UnicodeUsernameValidator()]},
+        }
 
     def validate_email(self, value):
         email = value.strip().lower()
