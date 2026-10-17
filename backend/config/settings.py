@@ -38,6 +38,9 @@ if not SECRET_KEY:
 elif not DEBUG and SECRET_KEY in INSECURE_DEV_KEYS:
     raise ImproperlyConfigured("DJANGO_SECRET_KEY uses an insecure development value.")
 ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
+CSRF_TRUSTED_ORIGINS = os.environ.get(
+    "DJANGO_CSRF_TRUSTED_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000"
+).split(",")
 
 # Application definition
 

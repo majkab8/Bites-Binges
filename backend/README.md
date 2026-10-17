@@ -54,11 +54,12 @@ A missing or outdated token returns `403`. In Swagger, reload the page after log
 
 ## Environment variables
 
-| Variable               | Default                 | Description                                   |
-| ---------------------- | ----------------------- | --------------------------------------------- |
-| `DJANGO_SECRET_KEY`    | `dev-only-insecure-key` | Secret key, **must be set outside local dev** |
-| `DJANGO_DEBUG`         | `0`                     | `1` = debug on, `0` = off                     |
-| `DJANGO_ALLOWED_HOSTS` | `localhost,127.0.0.1`   | Comma-separated list of hosts                 |
+| Variable                      | Default                                       | Description                                                                    |
+| ----------------------------- | --------------------------------------------- | ------------------------------------------------------------------------------ |
+| `DJANGO_SECRET_KEY`           | `dev-only-insecure-key`                       | Secret key, **must be set outside local dev**                                  |
+| `DJANGO_DEBUG`                | `0`                                           | `1` = debug on, `0` = off                                                      |
+| `DJANGO_ALLOWED_HOSTS`        | `localhost,127.0.0.1`                         | Comma-separated list of hosts                                                  |
+| `DJANGO_CSRF_TRUSTED_ORIGINS` | `http://localhost:3000,http://127.0.0.1:3000` | Comma-separated origins allowed to send `POST` requests (the frontend address) |
 
 ## Tests
 
