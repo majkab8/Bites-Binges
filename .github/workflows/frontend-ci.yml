@@ -66,3 +66,4 @@ jobs:
       - run: pnpm build
         env:
           NEXT_TELEMETRY_DISABLED: 1
+          BACKEND_URL: http://localhost:8000

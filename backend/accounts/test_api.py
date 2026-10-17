@@ -242,6 +242,27 @@ def test_auth_flow_with_csrf_token_rotated_after_login():
     assert login.status_code == 200
 
 
+def register_from(origin):
+    client = APIClient(enforce_csrf_checks=True)
+    client.get(CSRF_URL)
+    return client.post(
+        REGISTER_URL,
+        {"email": "maja@example.com", "username": "maja", "password": PASSWORD},
+        HTTP_ORIGIN=origin,
+        HTTP_X_CSRFTOKEN=client.cookies["csrftoken"].value,
+    )
+
+
+@pytest.mark.django_db
+def test_register_accepts_trusted_frontend_origin(settings):
+    assert register_from(settings.CSRF_TRUSTED_ORIGINS[0]).status_code == 201
+
+
+@pytest.mark.django_db
+def test_register_rejects_untrusted_origin():
+    assert register_from("https://evil.example.com").status_code == 403
+
+
 def test_login_is_throttled(api_client, user):
     for _ in range(10):
         api_client.post(LOGIN_URL, {"email": "maja@example.com", "password": "wrong-password"})
