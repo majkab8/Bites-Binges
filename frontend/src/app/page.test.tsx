@@ -9,4 +9,11 @@ describe("Home page", () => {
 
     expect(screen.getByRole("heading", { level: 1, name: "Bites & Binges" })).toBeInTheDocument();
   });
+
+  it("links to the log in and sign up pages", () => {
+    render(<Home />);
+
+    expect(screen.getByRole("link", { name: "Log in" })).toHaveAttribute("href", "/sign-in");
+    expect(screen.getByRole("link", { name: "Sign up" })).toHaveAttribute("href", "/sign-up");
+  });
 });
