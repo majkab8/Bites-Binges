@@ -12,8 +12,10 @@ REGISTER_URL = reverse("auth-register")
 LOGIN_URL = reverse("auth-login")
 LOGOUT_URL = reverse("auth-logout")
 ME_URL = reverse("auth-me")
+PASSWORD_CHANGE_URL = reverse("auth-password-change")
 
 PASSWORD = "Str0ng-pass-123"
+NEW_PASSWORD = "N3w-strong-pass-456"
 
 
 @pytest.fixture(autouse=True)
@@ -249,3 +251,60 @@ def test_login_is_throttled(api_client, user):
     response = api_client.post(LOGIN_URL, {"email": "maja@example.com", "password": PASSWORD})
 
     assert response.status_code == 429
+
+
+@pytest.fixture
+def logged_in_client(api_client, user):
+    api_client.force_login(user)
+    return api_client
+
+
+def change_password(client, current=PASSWORD, new=NEW_PASSWORD):
+    return client.post(PASSWORD_CHANGE_URL, {"current_password": current, "new_password": new})
+
+
+def test_change_password(logged_in_client, user):
+    response = change_password(logged_in_client)
+
+    assert response.status_code == 204
+    user.refresh_from_db()
+    assert user.check_password(NEW_PASSWORD)
+    assert logged_in_client.get(ME_URL).status_code == 200
+
+
+def test_change_password_logs_out_other_sessions(logged_in_client, user):
+    other_device = APIClient()
+    other_device.force_login(user)
+
+    change_password(logged_in_client)
+
+    assert other_device.get(ME_URL).status_code == 403
+
+
+def test_change_password_rejects_wrong_current_password(logged_in_client, user):
+    response = change_password(logged_in_client, current="wrong-password")
+
+    assert response.status_code == 400
+    assert "current_password" in response.data
+    user.refresh_from_db()
+    assert user.check_password(PASSWORD)
+
+
+@pytest.mark.parametrize("new", ["short", "12345678901", "password123", PASSWORD])
+def test_change_password_rejects_weak_or_same_password(logged_in_client, new):
+    response = change_password(logged_in_client, new=new)
+
+    assert response.status_code == 400
+    assert "new_password" in response.data
+
+
+@pytest.mark.django_db
+def test_change_password_requires_login(api_client):
+    assert change_password(api_client).status_code == 403
+
+
+def test_change_password_requires_csrf_token(user):
+    client = APIClient(enforce_csrf_checks=True)
+    client.force_login(user)
+
+    assert change_password(client).status_code == 403

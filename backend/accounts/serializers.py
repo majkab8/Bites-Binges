@@ -69,3 +69,24 @@ class LoginSerializer(serializers.Serializer):
             raise serializers.ValidationError("Invalid email or password.", code="authorization")
         attrs["user"] = user
         return attrs
+
+
+class ChangePasswordSerializer(serializers.Serializer):
+    current_password = serializers.CharField(write_only=True, style={"input_type": "password"})
+    new_password = serializers.CharField(write_only=True, style={"input_type": "password"})
+
+    def validate_current_password(self, value):
+        if not self.context["request"].user.check_password(value):
+            raise serializers.ValidationError("Current password is incorrect.")
+        return value
+
+    def validate(self, attrs):
+        if attrs["new_password"] == attrs["current_password"]:
+            raise serializers.ValidationError(
+                {"new_password": ["New password must be different from the current one."]}
+            )
+        try:
+            validate_password(attrs["new_password"], user=self.context["request"].user)
+        except DjangoValidationError as error:
+            raise serializers.ValidationError({"new_password": list(error.messages)}) from error
+        return attrs

@@ -31,17 +31,18 @@ uv run python manage.py runserver
 
 Session-based auth under `/api/auth/`. All request and response bodies are JSON.
 
-| Method | Endpoint              | Access    | Description                                                                                         |
-| ------ | --------------------- | --------- | --------------------------------------------------------------------------------------------------- |
-| `GET`  | `/api/auth/csrf/`     | Public    | Sets the `csrftoken` cookie (`204`)                                                                 |
-| `POST` | `/api/auth/register/` | Public    | `email`, `username`, `password`, optional `display_name`. Creates the user and logs them in (`201`) |
-| `POST` | `/api/auth/login/`    | Public    | `email`, `password`. Logs the user in (`200`)                                                       |
-| `POST` | `/api/auth/logout/`   | Public    | Ends the session (`204`)                                                                            |
-| `GET`  | `/api/auth/me/`       | Logged in | Current user (`200`), or `403` when not logged in                                                   |
+| Method | Endpoint                     | Access    | Description                                                                                                      |
+|--------|------------------------------| --------- |------------------------------------------------------------------------------------------------------------------|
+| `GET`  | `/api/auth/csrf/`            | Public    | Sets the `csrftoken` cookie (`204`)                                                                              |
+| `POST` | `/api/auth/register/`        | Public    | `email`, `username`, `password`, optional `display_name`. Creates the user and logs them in (`201`)              |
+| `POST` | `/api/auth/login/`           | Public    | `email`, `password`. Logs the user in (`200`)                                                                    |
+| `POST` | `/api/auth/logout/`          | Public    | Ends the session (`204`)                                                                                         |
+| `GET`  | `/api/auth/me/`              | Logged in | Current user (`200`), or `403` when not logged in                                                                |
+| `POST` | `/api/auth/password/change/` | Logged in | `current_password`, `new_password`. Changes the password, keeps this session and logs out other sessions (`204`) |
 
 `register`, `login` and `me` return the user as `{id, email, username, display_name, color}`. Validation errors return `400` with messages per field.
 
-Email and username are unique regardless of letter case. `register` and `login` are limited to 10 requests per minute per client (`429` after that).
+Email and username are unique regardless of letter case. `register`, `login` and `password/change` are limited to 10 requests per minute per client (`429` after that).
 
 ### CSRF
 
