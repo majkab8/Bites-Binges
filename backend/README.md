@@ -44,6 +44,8 @@ Session-based auth under `/api/auth/`. All request and response bodies are JSON.
 
 Email and username are unique regardless of letter case. `register`, `login` and `password/change` are limited to 10 requests per minute per client (`429` after that).
 
+After 5 failed login attempts in a row, the account is locked for 15 minutes. During that time `login` returns `400` with a lockout message, even with the correct password. A successful login resets the counter. An admin can unlock the account in the admin panel (Security section).
+
 ### CSRF
 
 Every `POST` needs the `X-CSRFToken` header with the value of the `csrftoken` cookie:

@@ -60,13 +60,21 @@ class LoginSerializer(serializers.Serializer):
     password = serializers.CharField(write_only=True, style={"input_type": "password"})
 
     def validate(self, attrs):
+        account = User.objects.filter(email__iexact=attrs["email"]).first()
+        if account is not None and account.is_locked():
+            raise serializers.ValidationError(
+                "Too many failed login attempts. Try again in 15 minutes.", code="account_locked"
+            )
         user = authenticate(
             request=self.context.get("request"),
             email=attrs["email"],
             password=attrs["password"],
         )
         if user is None:
+            if account is not None:
+                account.register_failed_login()
             raise serializers.ValidationError("Invalid email or password.", code="authorization")
+        user.reset_failed_login_attempts()
         attrs["user"] = user
         return attrs
 
