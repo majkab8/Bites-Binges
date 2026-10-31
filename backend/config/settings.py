@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 import os
+from datetime import timedelta
 from pathlib import Path
 
 import dj_database_url
@@ -162,6 +163,8 @@ REST_FRAMEWORK = {
         "auth": "10/min",
     },
 }
+
+LOGIN_LOCKOUT = {"MAX_FAILED_ATTEMPTS": 5, "LOCKOUT_DURATION": timedelta(minutes=15)}
 
 SPECTACULAR_SETTINGS = {
     "TITLE": "Board & Screen Hub API",

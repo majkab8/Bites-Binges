@@ -1,6 +1,9 @@
+from datetime import timedelta
+
 import pytest
 from django.core.cache import cache
 from django.urls import reverse
+from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 from rest_framework.test import APIClient
 
@@ -12,8 +15,10 @@ REGISTER_URL = reverse("auth-register")
 LOGIN_URL = reverse("auth-login")
 LOGOUT_URL = reverse("auth-logout")
 ME_URL = reverse("auth-me")
+PASSWORD_CHANGE_URL = reverse("auth-password-change")
 
 PASSWORD = "Str0ng-pass-123"
+NEW_PASSWORD = "N3w-strong-pass-456"
 
 
 @pytest.fixture(autouse=True)
@@ -180,6 +185,78 @@ def test_login_rejects_inactive_user(api_client, user):
     assert response.status_code == 400
 
 
+def login(client, password=PASSWORD, email="maja@example.com"):
+    return client.post(LOGIN_URL, {"email": email, "password": password})
+
+
+def fail_login(client, times):
+    for _ in range(times):
+        login(client, password="wrong-password")
+
+
+def is_locked_response(response):
+    return (
+        response.status_code == 400
+        and response.data["non_field_errors"][0].code == "account_locked"
+    )
+
+
+def test_login_locks_account_after_max_failed_attempts(api_client, user):
+    fail_login(api_client, 5)
+
+    response = login(api_client)
+
+    assert is_locked_response(response)
+    assert api_client.get(ME_URL).status_code == 403
+
+
+def test_login_below_max_failed_attempts_does_not_lock(api_client, user):
+    fail_login(api_client, 4)
+
+    response = login(api_client)
+
+    assert response.status_code == 200
+    user.refresh_from_db()
+    assert user.failed_login_attempts == 0
+
+
+def test_login_rejects_correct_password_while_locked(api_client, user):
+    user.lockout_until = timezone.now() + timedelta(minutes=5)
+    user.save()
+
+    assert is_locked_response(login(api_client))
+
+
+def test_login_works_after_lockout_expires(api_client, user):
+    user.lockout_until = timezone.now() - timedelta(minutes=1)
+    user.save()
+
+    response = login(api_client)
+
+    assert response.status_code == 200
+    user.refresh_from_db()
+    assert user.lockout_until is None
+
+
+def test_successful_login_resets_failed_attempts(api_client, user):
+    fail_login(api_client, 3)
+    login(api_client)
+    fail_login(api_client, 3)
+
+    assert login(api_client).status_code == 200
+
+
+def test_login_with_unknown_email_does_not_lock_anyone(api_client, user):
+    for _ in range(5):
+        response = login(api_client, email="nobody@example.com")
+
+    assert response.status_code == 400
+    assert response.data["non_field_errors"] == ["Invalid email or password."]
+    user.refresh_from_db()
+    assert user.failed_login_attempts == 0
+    assert user.lockout_until is None
+
+
 def test_logout_ends_session(api_client, user):
     api_client.force_login(user)
 
@@ -271,3 +348,60 @@ def test_login_is_throttled(api_client, user):
     response = api_client.post(LOGIN_URL, {"email": "maja@example.com", "password": PASSWORD})
 
     assert response.status_code == 429
+
+
+@pytest.fixture
+def logged_in_client(api_client, user):
+    api_client.force_login(user)
+    return api_client
+
+
+def change_password(client, current=PASSWORD, new=NEW_PASSWORD):
+    return client.post(PASSWORD_CHANGE_URL, {"current_password": current, "new_password": new})
+
+
+def test_change_password(logged_in_client, user):
+    response = change_password(logged_in_client)
+
+    assert response.status_code == 204
+    user.refresh_from_db()
+    assert user.check_password(NEW_PASSWORD)
+    assert logged_in_client.get(ME_URL).status_code == 200
+
+
+def test_change_password_logs_out_other_sessions(logged_in_client, user):
+    other_device = APIClient()
+    other_device.force_login(user)
+
+    change_password(logged_in_client)
+
+    assert other_device.get(ME_URL).status_code == 403
+
+
+def test_change_password_rejects_wrong_current_password(logged_in_client, user):
+    response = change_password(logged_in_client, current="wrong-password")
+
+    assert response.status_code == 400
+    assert "current_password" in response.data
+    user.refresh_from_db()
+    assert user.check_password(PASSWORD)
+
+
+@pytest.mark.parametrize("new", ["short", "12345678901", "password123", PASSWORD])
+def test_change_password_rejects_weak_or_same_password(logged_in_client, new):
+    response = change_password(logged_in_client, new=new)
+
+    assert response.status_code == 400
+    assert "new_password" in response.data
+
+
+@pytest.mark.django_db
+def test_change_password_requires_login(api_client):
+    assert change_password(api_client).status_code == 403
+
+
+def test_change_password_requires_csrf_token(user):
+    client = APIClient(enforce_csrf_checks=True)
+    client.force_login(user)
+
+    assert change_password(client).status_code == 403

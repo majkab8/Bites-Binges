@@ -7,7 +7,10 @@ from .models import User
 @admin.register(User)
 class CustomUserAdmin(UserAdmin):
     list_display = ("email", "username", "display_name", "is_staff")
-    fieldsets = UserAdmin.fieldsets + (("Profile", {"fields": ("display_name", "color")}),)
+    fieldsets = UserAdmin.fieldsets + (
+        ("Profile", {"fields": ("display_name", "color")}),
+        ("Security", {"fields": ("failed_login_attempts", "lockout_until")}),
+    )
     add_fieldsets = UserAdmin.add_fieldsets + (
         ("Profile", {"fields": ("email", "display_name", "color")}),
     )
