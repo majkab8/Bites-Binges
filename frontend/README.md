@@ -45,6 +45,29 @@ built on it such as `src/features/auth/api.ts`. `request()` adds the
 `X-CSRFToken` header to `POST` requests and turns error responses into an
 `ApiError` with messages per field.
 
+## API types
+
+Types of API requests and responses are generated from the backend's OpenAPI
+schema (`backend/schema.yml`) into `src/lib/api/schema.d.ts`. Do not edit that
+file by hand and do not write API types yourself. Take them from the schema:
+
+```ts
+import type { components } from "@/lib/api/schema";
+
+export type User = components["schemas"]["User"];
+```
+
+Request bodies have the `Request` suffix, e.g. `RegisterRequest`.
+
+After the backend schema changes, generate the types again and commit them:
+
+```bash
+pnpm api:types
+```
+
+If a field was renamed or removed, `pnpm typecheck` then shows every place that
+still uses it. CI fails when `schema.d.ts` does not match `schema.yml`.
+
 ## Scripts
 
 | Command              | Description                                     |
@@ -59,6 +82,7 @@ built on it such as `src/features/auth/api.ts`. `request()` adds the
 | `pnpm test`          | Run unit and component tests once               |
 | `pnpm test:watch`    | Run tests in watch mode                         |
 | `pnpm test:coverage` | Run tests with a coverage report in `coverage/` |
+| `pnpm api:types`     | Generate API types from `../backend/schema.yml` |
 
 ## Testing
 
