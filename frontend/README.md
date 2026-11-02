@@ -45,6 +45,22 @@ built on it such as `src/features/auth/api.ts`. `request()` adds the
 `X-CSRFToken` header to `POST` requests and turns error responses into an
 `ApiError` with messages per field.
 
+## Auth redirects
+
+`src/proxy.ts` runs on the server before every page and redirects based on the
+Django `sessionid` cookie:
+
+- Without the cookie, only `/`, `/sign-in` and `/sign-up` are open. Every other
+  page redirects to `/sign-in`.
+- With the cookie, `/`, `/sign-in` and `/sign-up` redirect to `/dashboard`.
+
+The proxy only checks that the cookie exists. It does not protect any data, the
+backend does. If the session has expired, `CurrentUserProvider` gets an error
+from `/api/auth/me`, logs out to remove the cookie and goes to `/sign-in`.
+
+When you add a page for logged-out users, add its path to `GUEST_PAGES` in
+`src/proxy.ts`.
+
 ## Scripts
 
 | Command              | Description                                     |
@@ -81,13 +97,14 @@ functions and unit-test those; full pages will be covered by end-to-end tests.
 src/
   app/              Routing only: pages, layouts and metadata (App Router)
     (auth)/         Sign-in and sign-up pages, wrapped in the form card layout
-    (platform)/     Pages for logged-in users; the layout checks the session
+    (platform)/     Pages for logged-in users; the layout loads the current user
   features/         Code for one area of the app
     auth/           Auth API calls, types, forms, session and logout
     dashboard/      Dashboard components
   components/ui/    Shared building blocks with no business logic
   lib/api/          HTTP client: requests, CSRF and error handling
   lib/cn.ts         Combines Tailwind classes (clsx + tailwind-merge)
+  proxy.ts          Redirects between guest and logged-in pages
 public/             Static assets served from /
 ```
 
@@ -100,7 +117,7 @@ Rules:
 - Folders in brackets, such as `(auth)`, group routes under a shared layout and
   do not appear in the URL.
 - A new page for logged-in users goes under `app/(platform)/`, so it gets the
-  session check from its layout. A new app (e.g. Game Night) gets
+  current user from its layout. A new app (e.g. Game Night) gets
   `app/(platform)/app/<name>/` for its routes and `features/<name>/` for its
   code.
 - Combine Tailwind classes with `cn()` from `src/lib/cn.ts`. It removes
