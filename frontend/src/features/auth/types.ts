@@ -1,19 +1,9 @@
-export type User = {
-  id: number;
-  email: string;
-  username: string;
-  display_name: string;
-  color: string;
-};
+import type { components } from "@/lib/api/schema";
 
-export type LoginData = {
-  email: string;
-  password: string;
-};
+type Schemas = components["schemas"];
 
-export type RegisterData = {
-  email: string;
-  username: string;
-  password: string;
-  display_name?: string;
-};
+export type User = Schemas["User"];
+
+export type LoginData = Schemas["LoginRequest"];
+
+export type RegisterData = Schemas["RegisterRequest"];

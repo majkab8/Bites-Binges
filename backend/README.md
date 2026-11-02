@@ -27,6 +27,16 @@ uv run python manage.py runserver
 - Admin panel: http://localhost:8000/admin (log in with email)
 - API docs: http://localhost:8000/api/docs/
 
+## API schema
+
+`schema.yml` describes the whole API in OpenAPI format. The frontend generates its TypeScript types from it. After you change a serializer, a view or a URL, generate it again and commit it:
+
+```powershell
+uv run python manage.py spectacular --file schema.yml --validate --fail-on-warn
+```
+
+Then generate the frontend types (see `frontend/README.md`). CI fails when `schema.yml` does not match the code.
+
 ## Auth API
 
 Session-based auth under `/api/auth/`. All request and response bodies are JSON.

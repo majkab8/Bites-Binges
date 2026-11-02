@@ -31,6 +31,7 @@ jobs:
           filters: |
             frontend:
               - "frontend/**"
+              - "backend/schema.yml"
               - ".github/workflows/frontend-ci.yml"
 
   check:
@@ -54,6 +55,11 @@ jobs:
           node-version-file: frontend/.nvmrc
 
       - run: pnpm install --frozen-lockfile
+
+      - name: Check that API types are up to date
+        run: |
+          pnpm api:types
+          git diff --exit-code src/lib/api/schema.d.ts
 
       - run: pnpm lint
 
