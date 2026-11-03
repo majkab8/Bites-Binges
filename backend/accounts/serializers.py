@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.contrib.auth import authenticate
 from django.contrib.auth.password_validation import validate_password
 from django.contrib.auth.validators import UnicodeUsernameValidator
@@ -79,8 +80,11 @@ class LoginSerializer(serializers.Serializer):
             if User.objects.filter(
                 email__iexact=attrs["email"], lockout_until__gt=timezone.now()
             ).exists():
+                lockout_minutes = int(
+                    settings.LOGIN_LOCKOUT["LOCKOUT_DURATION"].total_seconds() // 60
+                )
                 raise serializers.ValidationError(
-                    "Too many failed login attempts. Try again in 15 minutes.",
+                    f"Too many failed login attempts. Try again in {lockout_minutes} minutes.",
                     code="account_locked",
                 )
             raise serializers.ValidationError("Invalid email or password.", code="authorization")

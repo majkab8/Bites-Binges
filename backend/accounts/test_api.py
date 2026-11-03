@@ -479,3 +479,13 @@ def test_admin_login_is_blocked_while_locked(client, user):
     client.post(reverse("admin:login"), {"username": "maja@example.com", "password": PASSWORD})
 
     assert "_auth_user_id" not in client.session
+
+
+def test_lockout_message_uses_duration_from_settings(api_client, user, settings):
+    settings.LOGIN_LOCKOUT = {**settings.LOGIN_LOCKOUT, "LOCKOUT_DURATION": timedelta(minutes=30)}
+    user.lockout_until = timezone.now() + timedelta(minutes=5)
+    user.save()
+
+    response = login(api_client)
+
+    assert "30 minutes" in response.data["non_field_errors"][0]
