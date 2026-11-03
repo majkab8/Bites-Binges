@@ -155,9 +155,7 @@ REST_FRAMEWORK = {
     "DEFAULT_THROTTLE_CLASSES": [
         "rest_framework.throttling.ScopedRateThrottle",
     ],
-    "DEFAULT_THROTTLE_RATES": {
-        "auth": "10/min",
-    },
+    "DEFAULT_THROTTLE_RATES": {"auth": "10/min", "password_change": "5/hour"},
 }
 
 SPECTACULAR_SETTINGS = {

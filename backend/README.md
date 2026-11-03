@@ -42,7 +42,7 @@ Session-based auth under `/api/auth/`. All request and response bodies are JSON.
 
 `register`, `login` and `me` return the user as `{id, email, username, display_name, color}`. Validation errors return `400` with messages per field.
 
-Email and username are unique regardless of letter case. `register`, `login` and `password/change` are limited to 10 requests per minute per client (`429` after that).
+Email and username are unique regardless of letter case. `register` and `login` are limited to 10 requests per minute per client, and `password/change` to 5 requests per hour per user (`429` after that).
 
 ### CSRF
 

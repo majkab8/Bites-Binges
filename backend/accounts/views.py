@@ -70,7 +70,8 @@ class MeView(APIView):
 
 
 class ChangePasswordView(APIView):
-    throttle_scope = "auth"
+    permission_classes = [IsAuthenticated]
+    throttle_scope = "password_change"
 
     @extend_schema(request=ChangePasswordSerializer, responses={204: None})
     def post(self, request):

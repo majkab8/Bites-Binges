@@ -16,6 +16,7 @@ PASSWORD_CHANGE_URL = reverse("auth-password-change")
 
 PASSWORD = "Str0ng-pass-123"
 NEW_PASSWORD = "N3w-strong-pass-456"
+PASSWORD_WITH_SPACES = f"  {PASSWORD}  "
 
 
 @pytest.fixture(autouse=True)
@@ -308,3 +309,41 @@ def test_change_password_requires_csrf_token(user):
     client.force_login(user)
 
     assert change_password(client).status_code == 403
+
+
+@pytest.mark.django_db
+def test_register_keeps_spaces_in_password(api_client):
+    api_client.post(
+        REGISTER_URL,
+        {"email": "maja@example.com", "username": "maja", "password": PASSWORD_WITH_SPACES},
+    )
+
+    user = User.objects.get(email="maja@example.com")
+    assert user.check_password(PASSWORD_WITH_SPACES)
+    assert not user.check_password(PASSWORD)
+
+
+def test_login_does_not_trim_password(api_client, user):
+    response = api_client.post(
+        LOGIN_URL, {"email": "maja@example.com", "password": PASSWORD_WITH_SPACES}
+    )
+
+    assert response.status_code == 400
+
+
+def test_change_password_keeps_spaces_in_new_password(logged_in_client, user):
+    response = change_password(logged_in_client, new=f"  {NEW_PASSWORD}  ")
+
+    assert response.status_code == 204
+    user.refresh_from_db()
+    assert user.check_password(f"  {NEW_PASSWORD}  ")
+    assert not user.check_password(NEW_PASSWORD)
+
+
+def test_change_password_is_throttled(logged_in_client):
+    for _ in range(5):
+        change_password(logged_in_client, current="wrong-password")
+
+    response = change_password(logged_in_client)
+
+    assert response.status_code == 429
