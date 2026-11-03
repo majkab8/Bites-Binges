@@ -57,11 +57,16 @@ class User(AbstractUser):
         return self.lockout_until is not None and self.lockout_until > timezone.now()
 
     def register_failed_login(self):
-        self.failed_login_attempts += 1
-        if self.failed_login_attempts >= settings.LOGIN_LOCKOUT["MAX_FAILED_ATTEMPTS"]:
-            self.lockout_until = timezone.now() + settings.LOGIN_LOCKOUT["LOCKOUT_DURATION"]
-            self.failed_login_attempts = 0
-        self.save(update_fields=["failed_login_attempts", "lockout_until"])
+        users = User.objects.filter(pk=self.pk)
+
+        users.update(failed_login_attempts=models.F("failed_login_attempts") + 1)
+        users.filter(
+            failed_login_attempts__gte=settings.LOGIN_LOCKOUT["MAX_FAILED_ATTEMPTS"]
+        ).update(
+            failed_login_attempts=0,
+            lockout_until=timezone.now() + settings.LOGIN_LOCKOUT["LOCKOUT_DURATION"],
+        )
+        self.refresh_from_db(fields=["failed_login_attempts", "lockout_until"])
 
     def reset_failed_login_attempts(self):
         if self.failed_login_attempts == 0 and self.lockout_until is None:

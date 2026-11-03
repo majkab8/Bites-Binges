@@ -1,6 +1,7 @@
 from datetime import timedelta
 
 import pytest
+from django.contrib.auth import authenticate
 from django.core.cache import cache
 from django.urls import reverse
 from django.utils import timezone
@@ -444,3 +445,37 @@ def test_change_password_is_throttled(logged_in_client):
     response = change_password(logged_in_client)
 
     assert response.status_code == 429
+
+
+def test_failed_logins_are_counted_on_stale_user_instances(user):
+    same_user = User.objects.get(pk=user.pk)
+
+    user.register_failed_login()
+    same_user.register_failed_login()
+
+    user.refresh_from_db()
+    assert user.failed_login_attempts == 2
+
+
+def test_authenticate_rejects_locked_user(user):
+    user.lockout_until = timezone.now() + timedelta(minutes=5)
+    user.save()
+
+    assert authenticate(username="maja@example.com", password=PASSWORD) is None
+
+
+def test_authenticate_counts_failed_attempts(user):
+    authenticate(username="maja@example.com", password="wrong-password")
+
+    user.refresh_from_db()
+    assert user.failed_login_attempts == 1
+
+
+def test_admin_login_is_blocked_while_locked(client, user):
+    user.is_staff = True
+    user.lockout_until = timezone.now() + timedelta(minutes=5)
+    user.save()
+
+    client.post(reverse("admin:login"), {"username": "maja@example.com", "password": PASSWORD})
+
+    assert "_auth_user_id" not in client.session

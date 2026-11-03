@@ -3,6 +3,7 @@ from django.contrib.auth.password_validation import validate_password
 from django.contrib.auth.validators import UnicodeUsernameValidator
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import IntegrityError, transaction
+from django.utils import timezone
 from rest_framework import serializers
 
 from .models import User
@@ -69,21 +70,20 @@ class LoginSerializer(serializers.Serializer):
     )
 
     def validate(self, attrs):
-        account = User.objects.filter(email__iexact=attrs["email"]).first()
-        if account is not None and account.is_locked():
-            raise serializers.ValidationError(
-                "Too many failed login attempts. Try again in 15 minutes.", code="account_locked"
-            )
         user = authenticate(
             request=self.context.get("request"),
             email=attrs["email"],
             password=attrs["password"],
         )
         if user is None:
-            if account is not None:
-                account.register_failed_login()
+            if User.objects.filter(
+                email__iexact=attrs["email"], lockout_until__gt=timezone.now()
+            ).exists():
+                raise serializers.ValidationError(
+                    "Too many failed login attempts. Try again in 15 minutes.",
+                    code="account_locked",
+                )
             raise serializers.ValidationError("Invalid email or password.", code="authorization")
-        user.reset_failed_login_attempts()
         attrs["user"] = user
         return attrs
 
