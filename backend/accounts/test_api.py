@@ -1,6 +1,10 @@
+from datetime import timedelta
+
 import pytest
+from django.contrib.auth import authenticate
 from django.core.cache import cache
 from django.urls import reverse
+from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 from rest_framework.test import APIClient
 
@@ -181,6 +185,78 @@ def test_login_rejects_inactive_user(api_client, user):
     response = api_client.post(LOGIN_URL, {"email": "maja@example.com", "password": PASSWORD})
 
     assert response.status_code == 400
+
+
+def login(client, password=PASSWORD, email="maja@example.com"):
+    return client.post(LOGIN_URL, {"email": email, "password": password})
+
+
+def fail_login(client, times):
+    for _ in range(times):
+        login(client, password="wrong-password")
+
+
+def is_locked_response(response):
+    return (
+        response.status_code == 400
+        and response.data["non_field_errors"][0].code == "account_locked"
+    )
+
+
+def test_login_locks_account_after_max_failed_attempts(api_client, user):
+    fail_login(api_client, 5)
+
+    response = login(api_client)
+
+    assert is_locked_response(response)
+    assert api_client.get(ME_URL).status_code == 403
+
+
+def test_login_below_max_failed_attempts_does_not_lock(api_client, user):
+    fail_login(api_client, 4)
+
+    response = login(api_client)
+
+    assert response.status_code == 200
+    user.refresh_from_db()
+    assert user.failed_login_attempts == 0
+
+
+def test_login_rejects_correct_password_while_locked(api_client, user):
+    user.lockout_until = timezone.now() + timedelta(minutes=5)
+    user.save()
+
+    assert is_locked_response(login(api_client))
+
+
+def test_login_works_after_lockout_expires(api_client, user):
+    user.lockout_until = timezone.now() - timedelta(minutes=1)
+    user.save()
+
+    response = login(api_client)
+
+    assert response.status_code == 200
+    user.refresh_from_db()
+    assert user.lockout_until is None
+
+
+def test_successful_login_resets_failed_attempts(api_client, user):
+    fail_login(api_client, 3)
+    login(api_client)
+    fail_login(api_client, 3)
+
+    assert login(api_client).status_code == 200
+
+
+def test_login_with_unknown_email_does_not_lock_anyone(api_client, user):
+    for _ in range(5):
+        response = login(api_client, email="nobody@example.com")
+
+    assert response.status_code == 400
+    assert response.data["non_field_errors"] == ["Invalid email or password."]
+    user.refresh_from_db()
+    assert user.failed_login_attempts == 0
+    assert user.lockout_until is None
 
 
 def test_logout_ends_session(api_client, user):
@@ -369,3 +445,47 @@ def test_change_password_is_throttled(logged_in_client):
     response = change_password(logged_in_client)
 
     assert response.status_code == 429
+
+
+def test_failed_logins_are_counted_on_stale_user_instances(user):
+    same_user = User.objects.get(pk=user.pk)
+
+    user.register_failed_login()
+    same_user.register_failed_login()
+
+    user.refresh_from_db()
+    assert user.failed_login_attempts == 2
+
+
+def test_authenticate_rejects_locked_user(user):
+    user.lockout_until = timezone.now() + timedelta(minutes=5)
+    user.save()
+
+    assert authenticate(username="maja@example.com", password=PASSWORD) is None
+
+
+def test_authenticate_counts_failed_attempts(user):
+    authenticate(username="maja@example.com", password="wrong-password")
+
+    user.refresh_from_db()
+    assert user.failed_login_attempts == 1
+
+
+def test_admin_login_is_blocked_while_locked(client, user):
+    user.is_staff = True
+    user.lockout_until = timezone.now() + timedelta(minutes=5)
+    user.save()
+
+    client.post(reverse("admin:login"), {"username": "maja@example.com", "password": PASSWORD})
+
+    assert "_auth_user_id" not in client.session
+
+
+def test_lockout_message_uses_duration_from_settings(api_client, user, settings):
+    settings.LOGIN_LOCKOUT = {**settings.LOGIN_LOCKOUT, "LOCKOUT_DURATION": timedelta(minutes=30)}
+    user.lockout_until = timezone.now() + timedelta(minutes=5)
+    user.save()
+
+    response = login(api_client)
+
+    assert "30 minutes" in response.data["non_field_errors"][0]
